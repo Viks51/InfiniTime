@@ -19,6 +19,29 @@ namespace {
     lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
     return label;
   }
+
+  // Jour de la semaine en français (majuscules, sans accent pour la police embarquée).
+  const char* DayOfWeekFr(Pinetime::Controllers::DateTime::Days day) {
+    using Days = Pinetime::Controllers::DateTime::Days;
+    switch (day) {
+      case Days::Monday:
+        return "LUNDI";
+      case Days::Tuesday:
+        return "MARDI";
+      case Days::Wednesday:
+        return "MERCREDI";
+      case Days::Thursday:
+        return "JEUDI";
+      case Days::Friday:
+        return "VENDREDI";
+      case Days::Saturday:
+        return "SAMEDI";
+      case Days::Sunday:
+        return "DIMANCHE";
+      default:
+        return "--";
+    }
+  }
 }
 
 WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
@@ -49,9 +72,10 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   labelHeader = MakeLabel(container);
   lv_label_set_text_static(labelHeader, "MU / TH / UR  6000");
 
-  // Emblème Weyland-Yutani (logo « texte stylisé », ailes approximées en ASCII).
+  // Emblème Weyland (logo « texte stylisé ». À cette époque, Weyland n'a pas encore
+  // fusionné avec Yutani : on n'affiche donc que « WEYLAND »).
   labelLogo = MakeLabel(container);
-  lv_label_set_text_static(labelLogo, ">>--==[ W-Y ]==--<<");
+  lv_label_set_text_static(labelLogo, "-==[ WEYLAND ]==-");
 
   // Heure en gros.
   labelTime = MakeLabel(container);
@@ -62,17 +86,11 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   lv_label_set_text_static(labelShip, "N O S T R O M O");
 
   // Plaque constructeur.
-  labelMfr = MakeLabel(container);
-  lv_label_set_text_static(labelMfr, "MANUFACTURER: LOCKMART");
-
   labelMdl = MakeLabel(container);
   lv_label_set_text_static(labelMdl, "MODEL: CM-998 BISON");
 
   labelCls = MakeLabel(container);
   lv_label_set_text_static(labelCls, "CLASS: M-CLASS");
-
-  labelAffil = MakeLabel(container);
-  lv_label_set_text_static(labelAffil, "AFFIL: WEYLAND-YUTANI CORP");
 
   // Batterie + météo sur une ligne (ajout demandé : météo).
   batteryWeather = MakeLabel(container);
@@ -120,8 +138,8 @@ void WatchFaceMother::Refresh() {
       uint16_t year = dateTimeController.Year();
       uint8_t month = static_cast<uint8_t>(dateTimeController.Month());
       uint8_t day = dateTimeController.Day();
-      // Date jj/mm/aaaa (année réelle) + jour de la semaine.
-      lv_label_set_text_fmt(labelDate, "%02d/%02d/%04d  %s", day, month, year, dateTimeController.DayOfWeekToString());
+      // Jour de la semaine en français + date jj/mm/aaaa (année réelle).
+      lv_label_set_text_fmt(labelDate, "%s %02d/%02d/%04d", DayOfWeekFr(dateTimeController.DayOfWeek()), day, month, year);
     }
   }
 

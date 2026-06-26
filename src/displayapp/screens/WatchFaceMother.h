@@ -46,10 +46,8 @@ namespace Pinetime {
         lv_obj_t* labelLogo;
         lv_obj_t* labelTime;
         lv_obj_t* labelShip;
-        lv_obj_t* labelMfr;
         lv_obj_t* labelMdl;
         lv_obj_t* labelCls;
-        lv_obj_t* labelAffil;
         lv_obj_t* batteryWeather;
         lv_obj_t* connectState;
         lv_obj_t* labelDate;
