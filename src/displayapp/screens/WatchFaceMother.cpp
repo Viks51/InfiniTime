@@ -73,14 +73,15 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   lv_obj_t* container = lv_cont_create(lv_scr_act(), nullptr);
   lv_cont_set_layout(container, LV_LAYOUT_COLUMN_MID);
   lv_cont_set_fit(container, LV_FIT_TIGHT);
-  lv_obj_set_style_local_pad_inner(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, -3);
+  lv_obj_set_style_local_pad_inner(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, -1);
   lv_obj_set_style_local_bg_opa(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
 
   // En-tête : MU / TH / UR  6000
   labelHeader = MakeLabel(container);
   lv_label_set_text_static(labelHeader, "MU / TH / UR  6000");
 
-  // Icônes de notification (enveloppe = SMS, téléphone = appel manqué).
+  // Icônes de notification (enveloppe = SMS, téléphone = appel manqué). Ligne vide
+  // tant qu'il n'y a rien à signaler.
   notifIcons = MakeLabel(container);
   lv_label_set_text_static(notifIcons, "");
 
