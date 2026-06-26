@@ -21,7 +21,7 @@ namespace Pinetime {
     namespace Screens {
 
       // Cadran inspiré de l'interface MU/TH/UR (« Mother ») du Nostromo (film Alien).
-      // Esthétique terminal CRT : tout en vert vif sur fond noir.
+      // Esthétique terminal CRT : tout en vert vif sur fond noir, mise en page centrée.
       class WatchFaceMother : public Screen {
       public:
         WatchFaceMother(Controllers::DateTime& dateTimeController,
@@ -42,18 +42,17 @@ namespace Pinetime {
         Utility::DirtyValue<std::chrono::time_point<std::chrono::system_clock, std::chrono::days>> currentDate;
         Utility::DirtyValue<std::optional<Controllers::SimpleWeatherService::CurrentWeather>> currentWeather {};
 
-        lv_obj_t* container;
         lv_obj_t* labelHeader;
-        lv_obj_t* labelMuthur;
+        lv_obj_t* labelLogo;
         lv_obj_t* labelTime;
-        lv_obj_t* labelDate;
-        lv_obj_t* batteryValue;
-        lv_obj_t* weather;
-        lv_obj_t* connectState;
+        lv_obj_t* labelShip;
         lv_obj_t* labelMfr;
         lv_obj_t* labelMdl;
         lv_obj_t* labelCls;
-        lv_obj_t* labelPrompt;
+        lv_obj_t* labelAffil;
+        lv_obj_t* batteryWeather;
+        lv_obj_t* connectState;
+        lv_obj_t* labelDate;
 
         Controllers::DateTime& dateTimeController;
         const Controllers::Battery& batteryController;

@@ -12,8 +12,12 @@ namespace {
   // Vert phosphore vif, sur fond noir (esthétique MU/TH/UR).
   constexpr lv_color_t phosphorGreen = LV_COLOR_MAKE(0x00, 0xff, 0x00);
 
-  void SetGreen(lv_obj_t* label) {
+  // Crée un label vert, centré, ajouté au conteneur centré.
+  lv_obj_t* MakeLabel(lv_obj_t* parent) {
+    lv_obj_t* label = lv_label_create(parent, nullptr);
     lv_obj_set_style_local_text_color(label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, phosphorGreen);
+    lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
+    return label;
   }
 }
 
@@ -32,57 +36,54 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   // Fond noir intégral.
   lv_obj_set_style_local_bg_color(lv_scr_act(), LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_BLACK);
 
-  container = lv_cont_create(lv_scr_act(), nullptr);
-  lv_cont_set_layout(container, LV_LAYOUT_COLUMN_LEFT);
+  // Conteneur en colonne centrée : il se dimensionne sur son contenu (FIT_TIGHT)
+  // et les labels sont centrés les uns sous les autres (COLUMN_MID). Le bloc entier
+  // est ensuite aligné au centre de l'écran.
+  lv_obj_t* container = lv_cont_create(lv_scr_act(), nullptr);
+  lv_cont_set_layout(container, LV_LAYOUT_COLUMN_MID);
   lv_cont_set_fit(container, LV_FIT_TIGHT);
-  lv_obj_set_style_local_pad_inner(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, -2);
+  lv_obj_set_style_local_pad_inner(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, -1);
   lv_obj_set_style_local_bg_opa(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
 
-  // En-tête : constructeur + slogan Weyland-Yutani (logo "texte stylisé").
-  labelHeader = lv_label_create(container, nullptr);
-  SetGreen(labelHeader);
-  lv_label_set_text_static(labelHeader, "/W-Y/ WEYLAND-YUTANI");
+  // En-tête : MU / TH / UR  6000
+  labelHeader = MakeLabel(container);
+  lv_label_set_text_static(labelHeader, "MU / TH / UR  6000");
 
-  labelMuthur = lv_label_create(container, nullptr);
-  SetGreen(labelMuthur);
-  lv_label_set_text_static(labelMuthur, "MU/TH/UR 6000  INTERFACE");
+  // Emblème Weyland-Yutani (logo « texte stylisé », ailes approximées en ASCII).
+  labelLogo = MakeLabel(container);
+  lv_label_set_text_static(labelLogo, ">>--==[ W-Y ]==--<<");
 
   // Heure en gros.
-  labelTime = lv_label_create(container, nullptr);
-  SetGreen(labelTime);
+  labelTime = MakeLabel(container);
   lv_obj_set_style_local_text_font(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_42);
 
-  labelDate = lv_label_create(container, nullptr);
-  SetGreen(labelDate);
+  // Nom du vaisseau.
+  labelShip = MakeLabel(container);
+  lv_label_set_text_static(labelShip, "N O S T R O M O");
 
-  batteryValue = lv_label_create(container, nullptr);
-  SetGreen(batteryValue);
+  // Plaque constructeur.
+  labelMfr = MakeLabel(container);
+  lv_label_set_text_static(labelMfr, "MANUFACTURER: LOCKMART");
 
-  weather = lv_label_create(container, nullptr);
-  SetGreen(weather);
+  labelMdl = MakeLabel(container);
+  lv_label_set_text_static(labelMdl, "MODEL: CM-998 BISON");
 
-  connectState = lv_label_create(container, nullptr);
-  SetGreen(connectState);
+  labelCls = MakeLabel(container);
+  lv_label_set_text_static(labelCls, "CLASS: M-CLASS");
 
-  // Bloc « plaque constructeur ».
-  labelMfr = lv_label_create(container, nullptr);
-  SetGreen(labelMfr);
-  lv_label_set_text_static(labelMfr, "MFR.. LOCKMART");
+  labelAffil = MakeLabel(container);
+  lv_label_set_text_static(labelAffil, "AFFIL: WEYLAND-YUTANI CORP");
 
-  labelMdl = lv_label_create(container, nullptr);
-  SetGreen(labelMdl);
-  lv_label_set_text_static(labelMdl, "MDL.. CM-998 BISON");
+  // Batterie + météo sur une ligne (ajout demandé : météo).
+  batteryWeather = MakeLabel(container);
 
-  labelCls = lv_label_create(container, nullptr);
-  SetGreen(labelCls);
-  lv_label_set_text_static(labelCls, "CLS.. M-CLASS");
+  // Statut de connexion au téléphone (ajout demandé).
+  connectState = MakeLabel(container);
 
-  // Invite avec curseur clignotant.
-  labelPrompt = lv_label_create(container, nullptr);
-  SetGreen(labelPrompt);
-  lv_label_set_text_static(labelPrompt, "> READY_");
+  // Date + jour de la semaine.
+  labelDate = MakeLabel(container);
 
-  lv_obj_align(container, nullptr, LV_ALIGN_IN_TOP_LEFT, 4, 4);
+  lv_obj_align(container, nullptr, LV_ALIGN_CENTER, 0, 0);
 
   taskRefresh = lv_task_create(RefreshTaskCallback, LV_DISP_DEF_REFR_PERIOD, LV_TASK_PRIO_MID, this);
   Refresh();
@@ -98,7 +99,6 @@ void WatchFaceMother::Refresh() {
   if (currentDateTime.IsUpdated()) {
     uint8_t hour = dateTimeController.Hours();
     uint8_t minute = dateTimeController.Minutes();
-    uint8_t second = dateTimeController.Seconds();
 
     if (settingsController.GetClockType() == Controllers::Settings::ClockType::H12) {
       char ampmChar[3] = "AM";
@@ -115,31 +115,21 @@ void WatchFaceMother::Refresh() {
       lv_label_set_text_fmt(labelTime, "%02d:%02d", hour, minute);
     }
 
-    // Curseur de l'invite : clignote une seconde sur deux.
-    lv_label_set_text_static(labelPrompt, (second % 2 == 0) ? "> READY_" : "> READY");
-
     currentDate = std::chrono::time_point_cast<std::chrono::days>(currentDateTime.Get());
     if (currentDate.IsUpdated()) {
       uint16_t year = dateTimeController.Year();
-      Controllers::DateTime::Months month = dateTimeController.Month();
+      uint8_t month = static_cast<uint8_t>(dateTimeController.Month());
       uint8_t day = dateTimeController.Day();
-      // Année réelle (pas 2037).
-      lv_label_set_text_fmt(labelDate, "DATE. %04d-%02d-%02d", year, month, day);
+      // Date jj/mm/aaaa (année réelle) + jour de la semaine.
+      lv_label_set_text_fmt(labelDate, "%02d/%02d/%04d  %s", day, month, year, dateTimeController.DayOfWeekToString());
     }
   }
 
   powerPresent = batteryController.IsPowerPresent();
   batteryPercentRemaining = batteryController.PercentRemaining();
-  if (batteryPercentRemaining.IsUpdated() || powerPresent.IsUpdated()) {
-    if (batteryController.IsCharging()) {
-      lv_label_set_text_fmt(batteryValue, "POWR. %d%% CHG", batteryPercentRemaining.Get());
-    } else {
-      lv_label_set_text_fmt(batteryValue, "POWR. %d%%", batteryPercentRemaining.Get());
-    }
-  }
-
   currentWeather = weatherService.Current();
-  if (currentWeather.IsUpdated()) {
+  if (batteryPercentRemaining.IsUpdated() || powerPresent.IsUpdated() || currentWeather.IsUpdated()) {
+    int batt = batteryPercentRemaining.Get();
     auto optCurrentWeather = currentWeather.Get();
     if (optCurrentWeather) {
       int16_t temp = optCurrentWeather->temperature.Celsius();
@@ -148,9 +138,14 @@ void WatchFaceMother::Refresh() {
         temp = optCurrentWeather->temperature.Fahrenheit();
         tempUnit = 'F';
       }
-      lv_label_set_text_fmt(weather, "TEMP. %d%c %s", temp, tempUnit, Symbols::GetSimpleCondition(optCurrentWeather->iconId));
+      lv_label_set_text_fmt(batteryWeather,
+                            "BAT %d%%   %d%c %s",
+                            batt,
+                            temp,
+                            tempUnit,
+                            Symbols::GetSimpleCondition(optCurrentWeather->iconId));
     } else {
-      lv_label_set_text_static(weather, "TEMP. ---");
+      lv_label_set_text_fmt(batteryWeather, "BAT %d%%   --- ", batt);
     }
   }
 
@@ -158,11 +153,11 @@ void WatchFaceMother::Refresh() {
   bleRadioEnabled = bleController.IsRadioEnabled();
   if (bleState.IsUpdated() || bleRadioEnabled.IsUpdated()) {
     if (!bleRadioEnabled.Get()) {
-      lv_label_set_text_static(connectState, "LINK. OFFLINE");
+      lv_label_set_text_static(connectState, "LINK: OFFLINE");
     } else if (bleState.Get()) {
-      lv_label_set_text_static(connectState, "LINK. ONLINE");
+      lv_label_set_text_static(connectState, "LINK: ONLINE");
     } else {
-      lv_label_set_text_static(connectState, "LINK. NO SIGNAL");
+      lv_label_set_text_static(connectState, "LINK: NO SIGNAL");
     }
   }
 }
