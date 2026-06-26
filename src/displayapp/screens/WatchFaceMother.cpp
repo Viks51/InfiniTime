@@ -5,6 +5,7 @@
 #include "components/settings/Settings.h"
 #include "components/ble/SimpleWeatherService.h"
 #include "displayapp/screens/WeatherSymbols.h"
+#include "displayapp/icons/weyland/weyland.c"
 
 using namespace Pinetime::Applications::Screens;
 
@@ -65,25 +66,26 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   lv_obj_t* container = lv_cont_create(lv_scr_act(), nullptr);
   lv_cont_set_layout(container, LV_LAYOUT_COLUMN_MID);
   lv_cont_set_fit(container, LV_FIT_TIGHT);
-  lv_obj_set_style_local_pad_inner(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, -1);
+  lv_obj_set_style_local_pad_inner(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, -3);
   lv_obj_set_style_local_bg_opa(container, LV_CONT_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
 
   // En-tête : MU / TH / UR  6000
   labelHeader = MakeLabel(container);
   lv_label_set_text_static(labelHeader, "MU / TH / UR  6000");
 
-  // Emblème Weyland (logo « texte stylisé ». À cette époque, Weyland n'a pas encore
-  // fusionné avec Yutani : on n'affiche donc que « WEYLAND »).
-  labelLogo = MakeLabel(container);
-  lv_label_set_text_static(labelLogo, "-==[ WEYLAND ]==-");
+  // Emblème Weyland en bitmap (ailes stylisées, vert phosphore). À cette époque,
+  // Weyland n'a pas encore fusionné avec Yutani.
+  imgLogo = lv_img_create(container, nullptr);
+  lv_img_set_src(imgLogo, &weyland);
 
   // Heure en gros.
   labelTime = MakeLabel(container);
   lv_obj_set_style_local_text_font(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_42);
 
-  // Nom du vaisseau.
+  // Nom du vaisseau, en gros lui aussi.
   labelShip = MakeLabel(container);
-  lv_label_set_text_static(labelShip, "N O S T R O M O");
+  lv_obj_set_style_local_text_font(labelShip, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_42);
+  lv_label_set_text_static(labelShip, "NOSTROMO");
 
   // Plaque constructeur.
   labelMdl = MakeLabel(container);

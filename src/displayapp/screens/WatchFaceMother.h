@@ -43,7 +43,7 @@ namespace Pinetime {
         Utility::DirtyValue<std::optional<Controllers::SimpleWeatherService::CurrentWeather>> currentWeather {};
 
         lv_obj_t* labelHeader;
-        lv_obj_t* labelLogo;
+        lv_obj_t* imgLogo;
         lv_obj_t* labelTime;
         lv_obj_t* labelShip;
         lv_obj_t* labelMdl;
