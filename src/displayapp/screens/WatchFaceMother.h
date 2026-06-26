@@ -15,6 +15,7 @@ namespace Pinetime {
     class Settings;
     class Battery;
     class Ble;
+    class NotificationManager;
   }
 
   namespace Applications {
@@ -28,7 +29,8 @@ namespace Pinetime {
                         const Controllers::Battery& batteryController,
                         const Controllers::Ble& bleController,
                         Controllers::Settings& settingsController,
-                        Controllers::SimpleWeatherService& weatherService);
+                        Controllers::SimpleWeatherService& weatherService,
+                        Controllers::NotificationManager& notificationManager);
         ~WatchFaceMother() override;
 
         void Refresh() override;
@@ -42,10 +44,16 @@ namespace Pinetime {
         Utility::DirtyValue<std::chrono::time_point<std::chrono::system_clock, std::chrono::days>> currentDate;
         Utility::DirtyValue<std::optional<Controllers::SimpleWeatherService::CurrentWeather>> currentWeather {};
 
+        // État courant des icônes de notification (pour ne mettre à jour qu'au changement).
+        bool showMessage = false;
+        bool showCall = false;
+        bool notifIconsInit = false;
+
         lv_obj_t* labelHeader;
-        lv_obj_t* imgLogo;
+        lv_obj_t* notifIcons;
+        lv_obj_t* labelLogo;
         lv_obj_t* labelTime;
-        lv_obj_t* labelShip;
+        lv_obj_t* imgShip;
         lv_obj_t* labelMdl;
         lv_obj_t* labelCls;
         lv_obj_t* batteryWeather;
@@ -57,6 +65,7 @@ namespace Pinetime {
         const Controllers::Ble& bleController;
         Controllers::Settings& settingsController;
         Controllers::SimpleWeatherService& weatherService;
+        Controllers::NotificationManager& notificationManager;
 
         lv_task_t* taskRefresh;
       };
@@ -72,7 +81,8 @@ namespace Pinetime {
                                             controllers.batteryController,
                                             controllers.bleController,
                                             controllers.settingsController,
-                                            *controllers.weatherController);
+                                            *controllers.weatherController,
+                                            controllers.notificationManager);
       };
 
       static bool IsAvailable(Pinetime::Controllers::FS& /*filesystem*/) {

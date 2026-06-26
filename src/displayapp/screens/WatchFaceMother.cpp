@@ -4,14 +4,19 @@
 #include "components/ble/BleController.h"
 #include "components/settings/Settings.h"
 #include "components/ble/SimpleWeatherService.h"
+#include "components/ble/NotificationManager.h"
 #include "displayapp/screens/WeatherSymbols.h"
-#include "displayapp/icons/weyland/weyland.c"
+#include "displayapp/icons/nostromo/nostromo.c"
 
 using namespace Pinetime::Applications::Screens;
 
 namespace {
   // Vert phosphore vif, sur fond noir (esthétique MU/TH/UR).
   constexpr lv_color_t phosphorGreen = LV_COLOR_MAKE(0x00, 0xff, 0x00);
+
+  // Glyphes FontAwesome embarqués dans la police par défaut.
+  constexpr const char* iconMessage = "\xEF\x83\xA0"; // enveloppe (0xf0e0) -> SMS
+  constexpr const char* iconPhone = "\xEF\x82\x95";   // téléphone (0xf095) -> appel manqué
 
   // Crée un label vert, centré, ajouté au conteneur centré.
   lv_obj_t* MakeLabel(lv_obj_t* parent) {
@@ -49,13 +54,15 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
                                  const Controllers::Battery& batteryController,
                                  const Controllers::Ble& bleController,
                                  Controllers::Settings& settingsController,
-                                 Controllers::SimpleWeatherService& weatherService)
+                                 Controllers::SimpleWeatherService& weatherService,
+                                 Controllers::NotificationManager& notificationManager)
   : currentDateTime {{}},
     dateTimeController {dateTimeController},
     batteryController {batteryController},
     bleController {bleController},
     settingsController {settingsController},
-    weatherService {weatherService} {
+    weatherService {weatherService},
+    notificationManager {notificationManager} {
 
   // Fond noir intégral.
   lv_obj_set_style_local_bg_color(lv_scr_act(), LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_BLACK);
@@ -73,19 +80,22 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   labelHeader = MakeLabel(container);
   lv_label_set_text_static(labelHeader, "MU / TH / UR  6000");
 
-  // Emblème Weyland en bitmap (ailes stylisées, vert phosphore). À cette époque,
-  // Weyland n'a pas encore fusionné avec Yutani.
-  imgLogo = lv_img_create(container, nullptr);
-  lv_img_set_src(imgLogo, &weyland);
+  // Icônes de notification (enveloppe = SMS, téléphone = appel manqué).
+  notifIcons = MakeLabel(container);
+  lv_label_set_text_static(notifIcons, "");
+
+  // Emblème Weyland (logo texte). À cette époque, Weyland n'a pas encore fusionné
+  // avec Yutani : on n'affiche donc que « WEYLAND ».
+  labelLogo = MakeLabel(container);
+  lv_label_set_text_static(labelLogo, "-==[ WEYLAND ]==-");
 
   // Heure en gros.
   labelTime = MakeLabel(container);
   lv_obj_set_style_local_text_font(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_42);
 
-  // Nom du vaisseau, en gros lui aussi.
-  labelShip = MakeLabel(container);
-  lv_obj_set_style_local_text_font(labelShip, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_42);
-  lv_label_set_text_static(labelShip, "NOSTROMO");
+  // Nom du vaisseau, en image (police 42 px ne contient pas l'alphabet complet).
+  imgShip = lv_img_create(container, nullptr);
+  lv_img_set_src(imgShip, &nostromo);
 
   // Plaque constructeur.
   labelMdl = MakeLabel(container);
@@ -94,10 +104,10 @@ WatchFaceMother::WatchFaceMother(Controllers::DateTime& dateTimeController,
   labelCls = MakeLabel(container);
   lv_label_set_text_static(labelCls, "CLASS: M-CLASS");
 
-  // Batterie + météo sur une ligne (ajout demandé : météo).
+  // Batterie + météo sur une ligne.
   batteryWeather = MakeLabel(container);
 
-  // Statut de connexion au téléphone (ajout demandé).
+  // Statut de connexion au téléphone.
   connectState = MakeLabel(container);
 
   // Date + jour de la semaine.
@@ -115,6 +125,35 @@ WatchFaceMother::~WatchFaceMother() {
 }
 
 void WatchFaceMother::Refresh() {
+  // Parcourt le buffer de notifications (max 5, du plus récent au plus ancien) et
+  // détecte un SMS non lu et/ou un appel manqué encore présents.
+  bool hasMessage = false;
+  bool hasCall = false;
+  auto notif = notificationManager.GetLastNotification();
+  for (uint8_t i = 0; i < 5 && notif.valid; i++) {
+    using Categories = Controllers::NotificationManager::Categories;
+    if (notif.category == Categories::Sms || notif.category == Categories::InstantMessage) {
+      hasMessage = true;
+    } else if (notif.category == Categories::MissedCall) {
+      hasCall = true;
+    }
+    notif = notificationManager.GetPrevious(notif.id);
+  }
+  if (!notifIconsInit || hasMessage != showMessage || hasCall != showCall) {
+    showMessage = hasMessage;
+    showCall = hasCall;
+    notifIconsInit = true;
+    if (hasMessage && hasCall) {
+      lv_label_set_text_fmt(notifIcons, "%s   %s", iconMessage, iconPhone);
+    } else if (hasMessage) {
+      lv_label_set_text_static(notifIcons, iconMessage);
+    } else if (hasCall) {
+      lv_label_set_text_static(notifIcons, iconPhone);
+    } else {
+      lv_label_set_text_static(notifIcons, "");
+    }
+  }
+
   currentDateTime = std::chrono::time_point_cast<std::chrono::seconds>(dateTimeController.CurrentDateTime());
   if (currentDateTime.IsUpdated()) {
     uint8_t hour = dateTimeController.Hours();
